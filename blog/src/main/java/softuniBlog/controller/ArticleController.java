@@ -15,6 +15,8 @@ import softuniBlog.entity.User;
 import softuniBlog.repository.ArticleRepository;
 import softuniBlog.repository.UserRepository;
 
+import java.security.Principal;
+
 @Controller
 public class ArticleController {
     @Autowired
@@ -63,11 +65,14 @@ public class ArticleController {
 
     @GetMapping("/article/edit/{id}")
     @PreAuthorize("isAuthenticated()")
-    public String edit(@PathVariable Integer id, Model model) {
+    public String edit(@PathVariable Integer id, Model model, Principal principal) {
         if (!this.articleRepository.exists(id)) {
             return "redirect:/";
         }
         Article article = this.articleRepository.findOne(id);
+        if (!principal.getName().equals(article.getAuthor().getEmail())){
+             return "redirect:/article/"+article.getId();
+        }
         model.addAttribute("view", "article/edit");
         model.addAttribute("article", article);
 
@@ -85,16 +90,19 @@ public class ArticleController {
         article.setContent(articleBindingModel.getContent());
 
         this.articleRepository.saveAndFlush(article);
-        return "redirect:/article/" + article.getId();
+        return "redirect:/";
     }
 
     @GetMapping("/article/delete/{id}")
     @PreAuthorize("isAuthenticated()")
-    public String delete(Model model, @PathVariable Integer id) {
+    public String delete(Model model, @PathVariable Integer id, Principal principal) {
         if (!this.articleRepository.exists(id)) {
             return "redirect:/";
         }
         Article article = this.articleRepository.findOne(id);
+        if (!principal.getName().equals(article.getAuthor().getEmail())){
+            return "redirect:/article/"+article.getId();
+        }
         model.addAttribute("view", "article/delete");
         model.addAttribute("article", article);
         return "base-layout";
